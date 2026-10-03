@@ -596,7 +596,6 @@
             <path d="M -18,-10 Q 0,-30 18,-10 Z" fill="#eb4d4b" />
             <!-- Spinning Sails with SMIL and CSS fallback -->
             <g class="windmill-sails" transform="translate(0, -10)">
-              <animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="8s" repeatCount="indefinite" additive="sum" />
               <circle cx="0" cy="0" r="4.5" fill="#2f3542" />
               <g transform="rotate(0)">
                 <line x1="0" y1="0" x2="0" y2="-45" stroke="#795548" stroke-width="2.5" />
@@ -841,13 +840,11 @@
 
         <!-- REAR WHEEL (Center at 440, 500) -->
         <g class="wheel-rear">
-          <animateTransform attributeName="transform" type="rotate" from="0 440 500" to="360 440 500" dur="1.2s" repeatCount="indefinite" />
           <use href="#bike-wheel" x="440" y="500" />
         </g>
 
         <!-- FRONT WHEEL (Center at 760, 500) -->
         <g class="wheel-front">
-          <animateTransform attributeName="transform" type="rotate" from="0 760 500" to="360 760 500" dur="1.2s" repeatCount="indefinite" />
           <use href="#bike-wheel" x="760" y="500" />
         </g>
 
@@ -924,50 +921,10 @@
           <circle cx="524" cy="345" r="1.5" fill="#ffd32a" />
           <circle cx="538" cy="345" r="1.5" fill="#ffd32a" />
           <circle cx="552" cy="344" r="1.5" fill="#ffd32a" />
-
-          <!-- Handlebar Quill Stem & Cruiser Bars -->
-          <path d="M 714,335 L 714,302 C 714,295 706,292 695,292 L 666,296" fill="none" stroke="url(#chromeGrad)" stroke-width="6.5" stroke-linecap="round" />
-          <rect x="656" y="292" width="16" height="8" rx="3" fill="#8b4513" stroke="#5c2c16" stroke-width="1" />
-
-          <!-- Handlebar Brass Bell -->
-          <g transform="translate(698, 289)">
-            <ellipse cx="0" cy="0" rx="6.5" ry="5.5" fill="#ffd32a" stroke="#d35400" stroke-width="1" />
-            <circle cx="0" cy="-2" r="2.2" fill="#fff" opacity="0.6" />
-            <rect x="5" y="-1" width="3" height="2" fill="#7f8c8d" />
-            <path class="bell-ring-wave" d="M 8,-6 A 8,8 0 0,1 8,6" fill="none" stroke="#ffd32a" stroke-width="2" stroke-linecap="round" />
-            <path class="bell-ring-wave" d="M 13,-10 A 13,13 0 0,1 13,10" fill="none" stroke="#ffd32a" stroke-width="2" stroke-linecap="round" style="animation-delay: 0.2s;" />
-          </g>
-
-          <!-- Front Wicker Basket -->
-          <g transform="translate(720, 275)">
-            <polygon points="0,12 68,12 58,62 10,62" fill="url(#wickerWeave)" stroke="#d35400" stroke-width="2" />
-            <rect x="-2" y="9" width="72" height="7" rx="3.5" fill="#f8c291" stroke="#d35400" stroke-width="1.5" />
-            <rect x="10" y="7" width="5.5" height="11" rx="1.5" fill="#8b4513" />
-            <rect x="52" y="7" width="5.5" height="11" rx="1.5" fill="#8b4513" />
-
-            <!-- BASKET PASSENGER: COOL FISH -->
-            <g id="basket-fish" transform="translate(8, -8)">
-              <path d="M 16,30 C 14,2 34,-10 44,6 C 49,15 45,32 36,36 Z" fill="#54a0ff" stroke="#2e86de" stroke-width="1.8" />
-              <path d="M 19,25 C 18,10 28,3 36,12 Z" fill="#74b9ff" />
-              <g class="fish-tail">
-                <polygon points="12,22 -4,12 -1,30" fill="#54a0ff" stroke="#2e86de" stroke-width="1.5" />
-              </g>
-              <g transform="translate(32, 6)">
-                <polygon points="-8,-4 2,-4 1,5 -7,5" fill="#1e272e" />
-                <line x1="-6" y1="-2" x2="-2" y2="3" stroke="#ffffff" stroke-width="1.2" />
-                <polygon points="4,-4 14,-4 13,5 5,5" fill="#1e272e" />
-                <line x1="6" y1="-2" x2="10" y2="3" stroke="#ffffff" stroke-width="1.2" />
-                <line x1="0" y1="-2" x2="6" y2="-2" stroke="#1e272e" stroke-width="1.8" />
-              </g>
-              <path d="M 37,20 Q 42,24 45,20" fill="none" stroke="#1e272e" stroke-width="1.8" stroke-linecap="round" />
-              <path d="M 30,24 Q 38,26 34,31 Z" fill="#2e86de" />
-            </g>
-          </g>
         </g>
 
         <!-- CRANK & PEDAL ASSEMBLY (Center at 595, 490) -->
         <g class="crank-assembly">
-          <animateTransform attributeName="transform" type="rotate" from="0 595 490" to="360 595 490" dur="1.2s" repeatCount="indefinite" />
           <circle cx="595" cy="490" r="24" fill="url(#chromeGrad)" stroke="#718093" stroke-width="2" />
           <circle cx="595" cy="490" r="16" fill="none" stroke="#718093" stroke-width="1.5" stroke-dasharray="6, 4" />
           <circle cx="595" cy="490" r="6" fill="#2f3542" />
@@ -976,7 +933,6 @@
           <line x1="595" y1="490" x2="567" y2="490" stroke="#718093" stroke-width="7" stroke-linecap="round" />
           <!-- Far Pedal (Counter-rotating to stay horizontal) -->
           <g class="pedal-far-counter">
-            <animateTransform attributeName="transform" type="rotate" from="0 567 490" to="-360 567 490" dur="1.2s" repeatCount="indefinite" />
             <rect x="557" y="487" width="20" height="7" rx="2" fill="#353b48" stroke="#1e272e" stroke-width="1" />
             <rect x="561" y="489" width="12" height="3" fill="#e67e22" />
           </g>
@@ -985,7 +941,6 @@
           <line x1="595" y1="490" x2="623" y2="490" stroke="url(#chromeGrad)" stroke-width="8" stroke-linecap="round" />
           <!-- Near Pedal (Counter-rotating to stay horizontal) -->
           <g class="pedal-near-counter">
-            <animateTransform attributeName="transform" type="rotate" from="0 623 490" to="-360 623 490" dur="1.2s" repeatCount="indefinite" />
             <rect x="613" y="486" width="20" height="8" rx="2.5" fill="#2f3542" stroke="#1e272e" stroke-width="1.2" />
             <rect x="617" y="488" width="12" height="4" rx="1" fill="#f39c12" />
           </g>
@@ -1008,6 +963,22 @@
 
           <!-- White Feather Bloomer Puff at Hip -->
           <path d="M 532,344 C 528,358 538,370 554,370 C 570,370 580,358 574,344 Z" fill="#ffffff" stroke="#ced6e0" stroke-width="1.2" />
+
+          <!-- Fluttering Cycling Scarf (Tied at neck) -->
+          <g transform="translate(642, 198)">
+            <circle cx="0" cy="0" r="7" fill="#eb4d4b" stroke="#b71540" stroke-width="1" />
+            <circle cx="0" cy="0" r="2.2" fill="#ffd32a" />
+            <path class="scarf-tail-1" d="M -4,2 C -25,0 -52,-8 -78,-6 C -85,-5 -88,-1 -80,2 C -60,4 -35,8 -4,6 Z" fill="#eb4d4b" stroke="#b71540" stroke-width="1" />
+            <path class="scarf-tail-2" d="M -2,4 C -22,12 -48,10 -74,16 C -81,18 -84,22 -76,21 C -54,18 -30,16 -2,8 Z" fill="#ee5253" stroke="#b71540" stroke-width="1" />
+          </g>
+
+          <!-- NEAR WING (Folded along flank, flapping gently) -->
+          <g class="pelican-wing-near">
+            <path d="M 585,248 C 548,238 490,260 460,296 C 486,302 528,296 575,278 C 600,268 606,252 585,248 Z" fill="#ffffff" stroke="#ced6e0" stroke-width="1.2" />
+            <path d="M 552,258 C 522,258 480,280 455,310 C 480,314 518,305 554,290 Z" fill="#f1f2f6" />
+            <path d="M 475,302 C 455,312 436,325 430,335 C 448,328 470,318 488,312 Z" fill="#2d3436" />
+            <path d="M 490,292 C 472,302 454,315 444,324 C 460,319 480,308 500,298 Z" fill="#1e272e" />
+          </g>
 
           <!-- Graceful S-Curved Neck and Head -->
           <path d="M 622,260 C 636,235 646,205 644,172 C 642,148 654,130 675,130 C 695,130 706,145 700,168 C 692,198 670,235 648,272 C 638,285 628,285 622,260 Z" fill="url(#pelicanBodyGrad)" stroke="#dfe4ea" stroke-width="1.2" />
@@ -1048,23 +1019,49 @@
             <path d="M 18,-4 C 26,-9 33,-12 35,-11" fill="none" stroke="#eb4d4b" stroke-width="2.5" />
           </g>
 
-          <!-- Fluttering Cycling Scarf (Tied at neck) -->
-          <g transform="translate(642, 198)">
-            <circle cx="0" cy="0" r="7" fill="#eb4d4b" stroke="#b71540" stroke-width="1" />
-            <circle cx="0" cy="0" r="2.2" fill="#ffd32a" />
-            <path class="scarf-tail-1" d="M -4,2 C -25,0 -52,-8 -78,-6 C -85,-5 -88,-1 -80,2 C -60,4 -35,8 -4,6 Z" fill="#eb4d4b" stroke="#b71540" stroke-width="1" />
-            <path class="scarf-tail-2" d="M -2,4 C -22,12 -48,10 -74,16 C -81,18 -84,22 -76,21 C -54,18 -30,16 -2,8 Z" fill="#ee5253" stroke="#b71540" stroke-width="1" />
-          </g>
-
-          <!-- NEAR WING (Folded along flank, flapping gently) -->
-          <g class="pelican-wing-near">
-            <path d="M 585,248 C 548,238 490,260 460,296 C 486,302 528,296 575,278 C 600,268 606,252 585,248 Z" fill="#ffffff" stroke="#ced6e0" stroke-width="1.2" />
-            <path d="M 552,258 C 522,258 480,280 455,310 C 480,314 518,305 554,290 Z" fill="#f1f2f6" />
-            <path d="M 475,302 C 455,312 436,325 430,335 C 448,328 470,318 488,312 Z" fill="#2d3436" />
-            <path d="M 490,292 C 472,302 454,315 444,324 C 460,319 480,308 500,298 Z" fill="#1e272e" />
-          </g>
-
         </g> <!-- end .pelican-rider -->
+
+        <!-- HANDLEBAR, BELL & BASKET (Drawn AFTER pelican so they appear in front of rider) -->
+        <g id="bike-front-controls">
+          <!-- Handlebar Quill Stem & Cruiser Bars -->
+          <path d="M 714,335 L 714,302 C 714,295 706,292 695,292 L 666,296" fill="none" stroke="url(#chromeGrad)" stroke-width="6.5" stroke-linecap="round" />
+          <rect x="656" y="292" width="16" height="8" rx="3" fill="#8b4513" stroke="#5c2c16" stroke-width="1" />
+
+          <!-- Handlebar Brass Bell -->
+          <g transform="translate(698, 289)">
+            <ellipse cx="0" cy="0" rx="6.5" ry="5.5" fill="#ffd32a" stroke="#d35400" stroke-width="1" />
+            <circle cx="0" cy="-2" r="2.2" fill="#fff" opacity="0.6" />
+            <rect x="5" y="-1" width="3" height="2" fill="#7f8c8d" />
+            <path class="bell-ring-wave" d="M 8,-6 A 8,8 0 0,1 8,6" fill="none" stroke="#ffd32a" stroke-width="2" stroke-linecap="round" />
+            <path class="bell-ring-wave" d="M 13,-10 A 13,13 0 0,1 13,10" fill="none" stroke="#ffd32a" stroke-width="2" stroke-linecap="round" style="animation-delay: 0.2s;" />
+          </g>
+
+          <!-- Front Wicker Basket -->
+          <g transform="translate(720, 275)">
+            <polygon points="0,12 68,12 58,62 10,62" fill="url(#wickerWeave)" stroke="#d35400" stroke-width="2" />
+            <rect x="-2" y="9" width="72" height="7" rx="3.5" fill="#f8c291" stroke="#d35400" stroke-width="1.5" />
+            <rect x="10" y="7" width="5.5" height="11" rx="1.5" fill="#8b4513" />
+            <rect x="52" y="7" width="5.5" height="11" rx="1.5" fill="#8b4513" />
+
+            <!-- BASKET PASSENGER: COOL FISH -->
+            <g id="basket-fish" transform="translate(8, -8)">
+              <path d="M 16,30 C 14,2 34,-10 44,6 C 49,15 45,32 36,36 Z" fill="#54a0ff" stroke="#2e86de" stroke-width="1.8" />
+              <path d="M 19,25 C 18,10 28,3 36,12 Z" fill="#74b9ff" />
+              <g class="fish-tail">
+                <polygon points="12,22 -4,12 -1,30" fill="#54a0ff" stroke="#2e86de" stroke-width="1.5" />
+              </g>
+              <g transform="translate(32, 6)">
+                <polygon points="-8,-4 2,-4 1,5 -7,5" fill="#1e272e" />
+                <line x1="-6" y1="-2" x2="-2" y2="3" stroke="#ffffff" stroke-width="1.2" />
+                <polygon points="4,-4 14,-4 13,5 5,5" fill="#1e272e" />
+                <line x1="6" y1="-2" x2="10" y2="3" stroke="#ffffff" stroke-width="1.2" />
+                <line x1="0" y1="-2" x2="6" y2="-2" stroke="#1e272e" stroke-width="1.8" />
+              </g>
+              <path d="M 37,20 Q 42,24 45,20" fill="none" stroke="#1e272e" stroke-width="1.8" stroke-linecap="round" />
+              <path d="M 30,24 Q 38,26 34,31 Z" fill="#2e86de" />
+            </g>
+          </g>
+        </g>
 
         <!-- NEAR LEG & FOOT (In front of bike frame, perfectly tracked to near pedal) -->
         <g id="pelican-near-leg-group">
