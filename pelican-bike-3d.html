@@ -1,0 +1,1692 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>鹈鹕骑行记 · 3D (Pelican on Wheels)</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #7dc4e8;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    }
+
+    #webgl-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      outline: none;
+    }
+
+    /* Top-left glassmorphic control card */
+    .ui-panel {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 16px 20px;
+      box-shadow: 0 16px 36px rgba(18, 54, 78, 0.18), 0 2px 6px rgba(0,0,0,0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 340px;
+      pointer-events: auto;
+      transition: all 0.3s ease;
+    }
+
+    .ui-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .ui-icon {
+      font-size: 26px;
+      line-height: 1;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+    }
+
+    .ui-title-group h1 {
+      font-size: 17px;
+      font-weight: 700;
+      color: #1e293b;
+      letter-spacing: -0.2px;
+    }
+
+    .ui-title-group p {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    .features-tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag-badge {
+      font-size: 11px;
+      font-weight: 500;
+      color: #0369a1;
+      background: rgba(224, 242, 254, 0.85);
+      padding: 3px 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(186, 230, 253, 0.8);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .control-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .control-btn {
+      flex: 1;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.18s ease;
+    }
+
+    .control-btn:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+      transform: translateY(-1px);
+    }
+
+    .control-btn:active {
+      transform: translateY(0);
+      background: #cbd5e1;
+    }
+
+    .control-btn.active {
+      background: #0284c7;
+      color: #ffffff;
+      border-color: #0284c7;
+      box-shadow: 0 4px 10px rgba(2, 132, 199, 0.3);
+    }
+
+    .bell-btn {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #ffffff;
+      border: none;
+      box-shadow: 0 4px 12px rgba(217, 119, 6, 0.28);
+    }
+
+    .bell-btn:hover {
+      background: linear-gradient(135deg, #fbbf24, #d97706);
+      color: #ffffff;
+    }
+
+    .bell-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* Bottom helper hint */
+    .hint-bar {
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.65);
+      color: #f8fafc;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      backdrop-filter: blur(8px);
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      white-space: nowrap;
+    }
+
+    @media (max-width: 600px) {
+      .ui-panel {
+        top: 12px;
+        left: 12px;
+        right: 12px;
+        max-width: none;
+        padding: 12px 16px;
+      }
+      .features-tag-list {
+        display: none;
+      }
+      .hint-bar {
+        font-size: 11px;
+        bottom: 10px;
+      }
+    }
+  </style>
+
+  <!-- Three.js CDN using unpkg three@0.160.0 -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="webgl-canvas"></canvas>
+
+  <div class="ui-panel">
+    <div class="ui-header">
+      <div class="ui-icon">🚴‍♂️</div>
+      <div class="ui-title-group">
+        <h1>鹈鹕骑行记 · 3D</h1>
+        <p>Three.js 奇幻田园公路骑行</p>
+      </div>
+    </div>
+
+    <div class="features-tag-list">
+      <span class="tag-badge">🐟 篮中小鱼</span>
+      <span class="tag-badge">🕶️ 酷炫墨镜</span>
+      <span class="tag-badge">🧣 飘动红围巾</span>
+      <span class="tag-badge">💨 旋转风车</span>
+      <span class="tag-badge">🦵 逆运动学蹬踏</span>
+    </div>
+
+    <div class="control-row">
+      <button class="control-btn active" id="btn-cam-hero">侧前方</button>
+      <button class="control-btn" id="btn-cam-side">正侧面</button>
+      <button class="control-btn" id="btn-cam-front">正面</button>
+      <button class="control-btn" id="btn-cam-top">鸟瞰</button>
+    </div>
+
+    <div class="control-row">
+      <button class="control-btn" id="btn-speed-slow">慢速</button>
+      <button class="control-btn active" id="btn-speed-norm">正常</button>
+      <button class="control-btn" id="btn-speed-fast">冲刺</button>
+      <button class="control-btn bell-btn" id="btn-bell" title="按响自行车铃铛">🔔 铃铛</button>
+    </div>
+  </div>
+
+  <div class="hint-bar">
+    🖱️ 支持鼠标拖拽任意环视、滚轮缩放、右键平移
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    /* ==========================================================================
+       1. SCENE, CAMERA & RENDERER SETUP
+       ========================================================================== */
+    const canvas = document.getElementById('webgl-canvas');
+    const scene = new THREE.Scene();
+
+    // Pleasant sky blue with atmospheric fog
+    const SKY_COLOR = 0x76c4eb;
+    const FOG_COLOR = 0x98d7f7;
+    scene.background = new THREE.Color(SKY_COLOR);
+    scene.fog = new THREE.Fog(FOG_COLOR, 35, 110);
+
+    const camera = new THREE.PerspectiveCamera(
+      42,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      250
+    );
+    // Side-front hero perspective aimed at the pelican
+    const HERO_CAM_POS = new THREE.Vector3(4.6, 2.9, 5.6);
+    const TARGET_LOOKAT = new THREE.Vector3(0.15, 1.6, 0);
+    camera.position.copy(HERO_CAM_POS);
+    camera.lookAt(TARGET_LOOKAT);
+
+    const renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: true,
+      powerPreference: 'high-performance'
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.08;
+
+    // OrbitControls for free view exploration
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.target.copy(TARGET_LOOKAT);
+    controls.maxPolarAngle = Math.PI / 2 - 0.02; // Don't clip under ground
+    controls.minDistance = 2.0;
+    controls.maxDistance = 45.0;
+
+    /* ==========================================================================
+       2. LIGHTING (Hemisphere + Directional with Crisp Soft Shadows)
+       ========================================================================== */
+    // Bright cartoon hemisphere light
+    const hemiLight = new THREE.HemisphereLight(0xdcf0ff, 0x58813a, 0.85);
+    scene.add(hemiLight);
+
+    // Warm main sun light
+    const sunLight = new THREE.DirectionalLight(0xfff8ea, 1.45);
+    sunLight.position.set(16, 26, 14);
+    sunLight.target.position.set(0, 1.5, 0);
+    scene.add(sunLight.target);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.camera.near = 1.0;
+    sunLight.shadow.camera.far = 70;
+    sunLight.shadow.camera.left = -15;
+    sunLight.shadow.camera.right = 15;
+    sunLight.shadow.camera.top = 15;
+    sunLight.shadow.camera.bottom = -10;
+    sunLight.shadow.bias = -0.0006;
+    sunLight.shadow.normalBias = 0.02;
+    scene.add(sunLight);
+
+    // Gentle cool ambient fill light
+    const fillLight = new THREE.DirectionalLight(0x90caf9, 0.4);
+    fillLight.position.set(-15, 12, -10);
+    scene.add(fillLight);
+
+    /* ==========================================================================
+       3. MATERIALS REPOSITORY (Cartoon & Stylized Textures)
+       ========================================================================== */
+    const mats = {
+      // Pelican
+      pelicanFeathers: new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.45,
+        metalness: 0.02
+      }),
+      pelicanBeak: new THREE.MeshStandardMaterial({
+        color: 0xff8c00,
+        roughness: 0.35,
+        metalness: 0.05
+      }),
+      pelicanPouch: new THREE.MeshStandardMaterial({
+        color: 0xffa726,
+        roughness: 0.55,
+        metalness: 0.02
+      }),
+      pelicanFeet: new THREE.MeshStandardMaterial({
+        color: 0xff7b00,
+        roughness: 0.4
+      }),
+      pelicanLegJoints: new THREE.MeshStandardMaterial({
+        color: 0xf57c00,
+        roughness: 0.4
+      }),
+      pelicanEyeWhite: new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.2
+      }),
+      pelicanEyePupil: new THREE.MeshBasicMaterial({
+        color: 0x111111
+      }),
+      pelicanEyeGlint: new THREE.MeshBasicMaterial({
+        color: 0xffffff
+      }),
+      scarfRed: new THREE.MeshStandardMaterial({
+        color: 0xd32f2f,
+        roughness: 0.55,
+        metalness: 0.05
+      }),
+
+      // Bicycle
+      bikeFrame: new THREE.MeshStandardMaterial({
+        color: 0x14b8a6, // Vibrant turquoise mint
+        roughness: 0.25,
+        metalness: 0.4
+      }),
+      chromeMetal: new THREE.MeshStandardMaterial({
+        color: 0xeeeeee,
+        roughness: 0.2,
+        metalness: 0.85
+      }),
+      darkMetal: new THREE.MeshStandardMaterial({
+        color: 0x334155,
+        roughness: 0.4,
+        metalness: 0.6
+      }),
+      rubberTire: new THREE.MeshStandardMaterial({
+        color: 0x222831,
+        roughness: 0.85,
+        metalness: 0.1
+      }),
+      saddleLeather: new THREE.MeshStandardMaterial({
+        color: 0x4e342e,
+        roughness: 0.6,
+        metalness: 0.05
+      }),
+      wickerBasket: new THREE.MeshStandardMaterial({
+        color: 0xc89658,
+        roughness: 0.75,
+        metalness: 0.05
+      }),
+
+      // Fish & Sunglasses
+      fishBody: new THREE.MeshStandardMaterial({
+        color: 0x00b0ff,
+        roughness: 0.3,
+        metalness: 0.15
+      }),
+      fishBelly: new THREE.MeshStandardMaterial({
+        color: 0xe0f7fa,
+        roughness: 0.4
+      }),
+      fishFin: new THREE.MeshStandardMaterial({
+        color: 0x0288d1,
+        roughness: 0.3
+      }),
+      sunglassesFrame: new THREE.MeshStandardMaterial({
+        color: 0x111111,
+        roughness: 0.15,
+        metalness: 0.8
+      }),
+      sunglassesLens: new THREE.MeshStandardMaterial({
+        color: 0x0a0a0a,
+        roughness: 0.05,
+        metalness: 0.95
+      }),
+
+      // Countryside
+      grassMeadow: new THREE.MeshStandardMaterial({
+        color: 0x5ea83c,
+        roughness: 0.9,
+        metalness: 0.02
+      }),
+      roadGrey: new THREE.MeshStandardMaterial({
+        color: 0x8a9499,
+        roughness: 0.85,
+        metalness: 0.05
+      }),
+      roadMarking: new THREE.MeshBasicMaterial({
+        color: 0xffffff
+      }),
+      treeTrunk: new THREE.MeshStandardMaterial({
+        color: 0x6d4c41,
+        roughness: 0.8
+      }),
+      leavesA: new THREE.MeshStandardMaterial({ color: 0x388e3c, roughness: 0.75 }),
+      leavesB: new THREE.MeshStandardMaterial({ color: 0x43a047, roughness: 0.75 }),
+      leavesC: new THREE.MeshStandardMaterial({ color: 0x689f38, roughness: 0.75 }),
+
+      // Windmill & Mountains & Clouds
+      windmillWall: new THREE.MeshStandardMaterial({ color: 0xf5ebe0, roughness: 0.7 }),
+      windmillRoof: new THREE.MeshStandardMaterial({ color: 0xb71c1c, roughness: 0.6 }),
+      windmillWood: new THREE.MeshStandardMaterial({ color: 0x5d4037, roughness: 0.7 }),
+      windmillSail: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 }),
+      mountainFar: new THREE.MeshStandardMaterial({
+        color: 0x6f8ea8,
+        flatShading: true,
+        roughness: 0.9
+      }),
+      mountainSnow: new THREE.MeshStandardMaterial({
+        color: 0xf1f5f9,
+        flatShading: true,
+        roughness: 0.8
+      }),
+      cloudMat: new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.95,
+        metalness: 0.0
+      }),
+      woodFence: new THREE.MeshStandardMaterial({
+        color: 0x8d6e63,
+        roughness: 0.8
+      })
+    };
+
+    /* ==========================================================================
+       4. SCENERY GENERATION (Infinite Scrolling Countryside)
+       ========================================================================== */
+    const sceneryRoot = new THREE.Group();
+    scene.add(sceneryRoot);
+
+    // Main Meadow Ground Plane
+    const groundGeo = new THREE.PlaneGeometry(300, 160);
+    const groundMesh = new THREE.Mesh(groundGeo, mats.grassMeadow);
+    groundMesh.rotation.x = -Math.PI / 2;
+    groundMesh.position.set(0, -0.01, 0);
+    groundMesh.receiveShadow = true;
+    scene.add(groundMesh);
+
+    // Country Road (along X-axis)
+    const roadWidth = 3.6;
+    const roadLength = 240;
+    const roadGeo = new THREE.PlaneGeometry(roadLength, roadWidth);
+    const roadMesh = new THREE.Mesh(roadGeo, mats.roadGrey);
+    roadMesh.rotation.x = -Math.PI / 2;
+    roadMesh.position.set(0, 0.005, 0);
+    roadMesh.receiveShadow = true;
+    scene.add(roadMesh);
+
+    // Road side verge edges
+    const vergeGeo = new THREE.PlaneGeometry(roadLength, 0.2);
+    const vergeLeft = new THREE.Mesh(vergeGeo, new THREE.MeshStandardMaterial({ color: 0x78909c, roughness: 0.9 }));
+    vergeLeft.rotation.x = -Math.PI / 2;
+    vergeLeft.position.set(0, 0.007, roadWidth / 2);
+    scene.add(vergeLeft);
+
+    const vergeRight = vergeLeft.clone();
+    vergeRight.position.set(0, 0.007, -roadWidth / 2);
+    scene.add(vergeRight);
+
+    // Road Dashed Center Marks (moving elements)
+    const roadDashes = [];
+    const dashGeo = new THREE.PlaneGeometry(1.6, 0.16);
+    const dashSpacing = 4.0;
+    const dashCount = Math.ceil(roadLength / dashSpacing);
+    for (let i = 0; i < dashCount; i++) {
+      const dash = new THREE.Mesh(dashGeo, mats.roadMarking);
+      dash.rotation.x = -Math.PI / 2;
+      dash.position.set(-roadLength / 2 + i * dashSpacing, 0.009, 0);
+      dash.receiveShadow = true;
+      scene.add(dash);
+      roadDashes.push(dash);
+    }
+
+    // Moving roadside objects list
+    const movingObjects = [];
+
+    // Helper: Create Low-Poly Tree
+    function createTree(scale = 1.0) {
+      const tree = new THREE.Group();
+      
+      const trunkHeight = 2.4 * scale;
+      const trunkGeo = new THREE.CylinderGeometry(0.18 * scale, 0.28 * scale, trunkHeight, 8);
+      const trunk = new THREE.Mesh(trunkGeo, mats.treeTrunk);
+      trunk.position.y = trunkHeight / 2;
+      trunk.castShadow = true;
+      trunk.receiveShadow = true;
+      tree.add(trunk);
+
+      // Multi-ball cartoon canopy
+      const leafMats = [mats.leavesA, mats.leavesB, mats.leavesC];
+      const foliageGroup = new THREE.Group();
+      foliageGroup.position.y = trunkHeight * 0.9;
+
+      const sphereCount = 5;
+      for (let i = 0; i < sphereCount; i++) {
+        const rad = (0.75 + Math.random() * 0.45) * scale;
+        const sphereGeo = new THREE.SphereGeometry(rad, 8, 8);
+        const sphereMesh = new THREE.Mesh(sphereGeo, leafMats[i % leafMats.length]);
+        const angle = (i / sphereCount) * Math.PI * 2;
+        const dist = 0.45 * scale;
+        sphereMesh.position.set(
+          Math.cos(angle) * dist,
+          (i * 0.35 + 0.3) * scale,
+          Math.sin(angle) * dist
+        );
+        sphereMesh.castShadow = true;
+        sphereMesh.receiveShadow = true;
+        foliageGroup.add(sphereMesh);
+      }
+      tree.add(foliageGroup);
+      return tree;
+    }
+
+    // Scatter Trees along both sides of road
+    const treeCount = 28;
+    for (let i = 0; i < treeCount; i++) {
+      const scale = 0.8 + Math.random() * 0.6;
+      const tree = createTree(scale);
+      // Place either on south side (+Z) or north side (-Z)
+      const isNorth = Math.random() > 0.45;
+      const z = isNorth
+        ? -(roadWidth / 2 + 2.5 + Math.random() * 18)
+        : +(roadWidth / 2 + 2.5 + Math.random() * 12);
+      const x = -100 + Math.random() * 200;
+      tree.position.set(x, 0, z);
+      scene.add(tree);
+      movingObjects.push({
+        mesh: tree,
+        speedFactor: 1.0,
+        wrapMin: -90,
+        wrapMax: 90,
+        resetZ: () => isNorth ? -(roadWidth / 2 + 2.5 + Math.random() * 18) : +(roadWidth / 2 + 2.5 + Math.random() * 12)
+      });
+    }
+
+    // Roadside Wooden Fence Posts & Rails
+    const fenceGroup = new THREE.Group();
+    const postGeo = new THREE.CylinderGeometry(0.06, 0.07, 0.9, 6);
+    const railGeo = new THREE.BoxGeometry(3.0, 0.05, 0.04);
+    for (let i = -25; i <= 25; i++) {
+      const x = i * 3.0;
+      const z = -(roadWidth / 2 + 0.8);
+      const post = new THREE.Mesh(postGeo, mats.woodFence);
+      post.position.set(x, 0.45, z);
+      post.castShadow = true;
+      post.receiveShadow = true;
+      fenceGroup.add(post);
+
+      const rail1 = new THREE.Mesh(railGeo, mats.woodFence);
+      rail1.position.set(x + 1.5, 0.65, z);
+      rail1.castShadow = true;
+      fenceGroup.add(rail1);
+
+      const rail2 = new THREE.Mesh(railGeo, mats.woodFence);
+      rail2.position.set(x + 1.5, 0.35, z);
+      rail2.castShadow = true;
+      fenceGroup.add(rail2);
+    }
+    scene.add(fenceGroup);
+    movingObjects.push({
+      mesh: fenceGroup,
+      speedFactor: 1.0,
+      isPeriodic: true,
+      period: 3.0
+    });
+
+    // Classic Windmill (Tower + 4 Turning Blades)
+    const windmill = new THREE.Group();
+    const towerHeight = 7.0;
+    const towerGeo = new THREE.CylinderGeometry(1.4, 2.2, towerHeight, 8);
+    const towerMesh = new THREE.Mesh(towerGeo, mats.windmillWall);
+    towerMesh.position.y = towerHeight / 2;
+    towerMesh.castShadow = true;
+    towerMesh.receiveShadow = true;
+    windmill.add(towerMesh);
+
+    // Windmill Conical Roof
+    const roofGeo = new THREE.ConeGeometry(1.65, 2.0, 8);
+    const roofMesh = new THREE.Mesh(roofGeo, mats.windmillRoof);
+    roofMesh.position.y = towerHeight + 1.0;
+    roofMesh.castShadow = true;
+    windmill.add(roofMesh);
+
+    // Windmill Door & Windows
+    const doorGeo = new THREE.BoxGeometry(0.7, 1.2, 0.1);
+    const door = new THREE.Mesh(doorGeo, mats.windmillWood);
+    door.position.set(0, 0.6, 2.05);
+    windmill.add(door);
+
+    // Windmill Rotor Axle & Hub
+    const hubGroup = new THREE.Group();
+    hubGroup.position.set(0, towerHeight - 0.5, 1.5);
+    const hubCap = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.35, 0.45, 0.6, 12),
+      mats.windmillWood
+    );
+    hubCap.rotation.x = Math.PI / 2;
+    hubGroup.add(hubCap);
+
+    // 4 Turning Blades
+    const bladesGroup = new THREE.Group();
+    bladesGroup.position.z = 0.35;
+    const bladeArmGeo = new THREE.BoxGeometry(0.12, 7.5, 0.08);
+    const sailGeo = new THREE.BoxGeometry(0.7, 3.0, 0.02);
+
+    for (let i = 0; i < 4; i++) {
+      const blade = new THREE.Group();
+      blade.rotation.z = (i * Math.PI) / 2;
+
+      // Central spar
+      const spar = new THREE.Mesh(bladeArmGeo, mats.windmillWood);
+      spar.position.y = 3.6;
+      spar.scale.y = 0.95;
+      spar.castShadow = true;
+      blade.add(spar);
+
+      // Lattice sail cloth
+      const sail = new THREE.Mesh(sailGeo, mats.windmillSail);
+      sail.position.set(0.42, 4.2, 0.02);
+      sail.castShadow = true;
+      blade.add(sail);
+
+      bladesGroup.add(blade);
+    }
+    hubGroup.add(bladesGroup);
+    windmill.add(hubGroup);
+
+    // Position windmill in the picturesque meadow
+    windmill.position.set(25, 0, -18);
+    scene.add(windmill);
+    movingObjects.push({
+      mesh: windmill,
+      speedFactor: 1.0,
+      wrapMin: -70,
+      wrapMax: 70,
+      resetZ: () => -18
+    });
+
+    // Distant Mountains (Large stylized low-poly triangular peaks)
+    const mountainGroup = new THREE.Group();
+    const mountainConfigs = [
+      { x: -70, z: -55, r: 18, h: 22 },
+      { x: -35, z: -48, r: 15, h: 18 },
+      { x: 0,   z: -52, r: 22, h: 26 },
+      { x: 38,  z: -46, r: 16, h: 20 },
+      { x: 75,  z: -58, r: 24, h: 28 },
+      { x: 110, z: -50, r: 17, h: 21 }
+    ];
+
+    mountainConfigs.forEach(cfg => {
+      const peak = new THREE.Group();
+      const coneGeo = new THREE.ConeGeometry(cfg.r, cfg.h, 4);
+      coneGeo.rotateY(Math.PI / 4);
+      const mountainMesh = new THREE.Mesh(coneGeo, mats.mountainFar);
+      mountainMesh.position.y = cfg.h / 2;
+      peak.add(mountainMesh);
+
+      // Snow Cap
+      const snowGeo = new THREE.ConeGeometry(cfg.r * 0.38, cfg.h * 0.38, 4);
+      snowGeo.rotateY(Math.PI / 4);
+      const snowMesh = new THREE.Mesh(snowGeo, mats.mountainSnow);
+      snowMesh.position.y = cfg.h - (cfg.h * 0.38) / 2;
+      peak.add(snowMesh);
+
+      peak.position.set(cfg.x, -0.2, cfg.z);
+      mountainGroup.add(peak);
+    });
+    scene.add(mountainGroup);
+    movingObjects.push({
+      mesh: mountainGroup,
+      speedFactor: 0.18, // Slow parallax
+      isPeriodic: true,
+      period: 140
+    });
+
+    // Puffy Clouds drifting in the sky
+    const clouds = [];
+    function createCloud(scale = 1.0) {
+      const cloud = new THREE.Group();
+      const parts = 5;
+      for (let i = 0; i < parts; i++) {
+        const r = (1.2 + Math.random() * 0.8) * scale;
+        const sphere = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 8), mats.cloudMat);
+        sphere.position.set(
+          (i - parts / 2) * 1.3 * scale,
+          (Math.sin(i) * 0.35) * scale,
+          (Math.random() * 0.6 - 0.3) * scale
+        );
+        cloud.add(sphere);
+      }
+      return cloud;
+    }
+
+    for (let i = 0; i < 9; i++) {
+      const cloud = createCloud(1.0 + Math.random() * 0.8);
+      const x = -80 + Math.random() * 160;
+      const y = 14 + Math.random() * 10;
+      const z = -15 - Math.random() * 35;
+      cloud.position.set(x, y, z);
+      scene.add(cloud);
+      clouds.push({
+        mesh: cloud,
+        speed: 0.08 + Math.random() * 0.06,
+        wrapMin: -90,
+        wrapMax: 90
+      });
+    }
+
+    /* ==========================================================================
+       5. BICYCLE 3D MODELING (Accurate Ergonomics & Clean Geometry)
+       ========================================================================== */
+    const bikeGroup = new THREE.Group();
+    scene.add(bikeGroup);
+
+    // Dimensions:
+    const WHEEL_R = 0.90;
+    const WHEELBASE = 2.60;
+    const REAR_HUB = new THREE.Vector3(-WHEELBASE / 2, WHEEL_R, 0);
+    const FRONT_HUB = new THREE.Vector3(WHEELBASE / 2, WHEEL_R, 0);
+    const BB_POS = new THREE.Vector3(-0.06, 0.65, 0); // Bottom Bracket
+    const SEAT_CLUSTER = new THREE.Vector3(-0.35, 1.26, 0);
+    const HEAD_LOWER = new THREE.Vector3(0.92, 1.15, 0);
+    const HEAD_UPPER = new THREE.Vector3(0.88, 1.55, 0);
+    const CRANK_R = 0.34;
+    const PEDAL_OFFSET_Z = 0.38;
+
+    // Helper: Build a Wheel with Torus Tire + Rim + Hub + 16 Spokes
+    function createBicycleWheel() {
+      const wheel = new THREE.Group();
+
+      // Rubber Tire
+      const tireGeo = new THREE.TorusGeometry(WHEEL_R, 0.055, 14, 48);
+      const tire = new THREE.Mesh(tireGeo, mats.rubberTire);
+      tire.castShadow = true;
+      wheel.add(tire);
+
+      // Silver Rim
+      const rimGeo = new THREE.TorusGeometry(WHEEL_R - 0.06, 0.026, 12, 48);
+      const rim = new THREE.Mesh(rimGeo, mats.chromeMetal);
+      wheel.add(rim);
+
+      // Hub Axle
+      const hubGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.22, 16);
+      hubGeo.rotateX(Math.PI / 2);
+      const hub = new THREE.Mesh(hubGeo, mats.chromeMetal);
+      hub.castShadow = true;
+      wheel.add(hub);
+
+      // 16 Spokes
+      const spokeGeo = new THREE.CylinderGeometry(0.005, 0.005, WHEEL_R * 1.84, 4);
+      for (let i = 0; i < 8; i++) {
+        const spoke = new THREE.Mesh(spokeGeo, mats.chromeMetal);
+        spoke.rotation.z = (i * Math.PI) / 8;
+        // Subtle spoke angle alternation for realism
+        spoke.rotation.x = (i % 2 === 0 ? 0.025 : -0.025);
+        wheel.add(spoke);
+      }
+
+      // Valve Stem
+      const valve = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.012, 0.012, 0.12, 6),
+        mats.darkMetal
+      );
+      valve.position.y = WHEEL_R - 0.12;
+      wheel.add(valve);
+
+      return wheel;
+    }
+
+    // Rear & Front Wheels
+    const rearWheel = createBicycleWheel();
+    rearWheel.position.copy(REAR_HUB);
+    bikeGroup.add(rearWheel);
+
+    const frontWheel = createBicycleWheel();
+    frontWheel.position.copy(FRONT_HUB);
+    bikeGroup.add(frontWheel);
+
+    // Classic Curved Vintage Fenders (Mudguards)
+    function createFender(angleSpan = Math.PI * 0.65, rotOffset = 0) {
+      const fenderGeo = new THREE.TorusGeometry(WHEEL_R + 0.065, 0.06, 8, 32, angleSpan);
+      const fender = new THREE.Mesh(fenderGeo, mats.chromeMetal);
+      fender.rotation.z = rotOffset;
+      fender.castShadow = true;
+      return fender;
+    }
+    const rearFender = createFender(Math.PI * 0.75, Math.PI * 0.45);
+    rearFender.position.copy(REAR_HUB);
+    bikeGroup.add(rearFender);
+
+    const frontFender = createFender(Math.PI * 0.55, Math.PI * 0.35);
+    frontFender.position.copy(FRONT_HUB);
+    bikeGroup.add(frontFender);
+
+    // Frame Builder Helper (cylinder connecting point A to point B)
+    function addFrameTube(pA, pB, radius = 0.034, mat = mats.bikeFrame) {
+      const dir = new THREE.Vector3().subVectors(pB, pA);
+      const len = dir.length();
+      const tubeGeo = new THREE.CylinderGeometry(radius, radius, len, 12);
+      const tube = new THREE.Mesh(tubeGeo, mat);
+      tube.position.copy(pA).addScaledVector(dir, 0.5);
+      tube.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+      tube.castShadow = true;
+      bikeGroup.add(tube);
+      return tube;
+    }
+
+    // Main Diamond / Cruiser Frame Tubes
+    addFrameTube(BB_POS, SEAT_CLUSTER); // Seat Tube
+    addFrameTube(BB_POS, HEAD_LOWER);  // Down Tube
+    addFrameTube(SEAT_CLUSTER, HEAD_UPPER); // Top Tube
+    addFrameTube(HEAD_LOWER, HEAD_UPPER, 0.042); // Head Tube
+
+    // Rear Stays (left & right pairs)
+    const rearDropLeft = REAR_HUB.clone().setZ(+0.10);
+    const rearDropRight = REAR_HUB.clone().setZ(-0.10);
+    addFrameTube(BB_POS, rearDropLeft, 0.024);
+    addFrameTube(BB_POS, rearDropRight, 0.024);
+    addFrameTube(SEAT_CLUSTER, rearDropLeft, 0.024);
+    addFrameTube(SEAT_CLUSTER, rearDropRight, 0.024);
+
+    // Front Fork (left & right blades)
+    const frontDropLeft = FRONT_HUB.clone().setZ(+0.10);
+    const frontDropRight = FRONT_HUB.clone().setZ(-0.10);
+    addFrameTube(HEAD_LOWER, frontDropLeft, 0.026);
+    addFrameTube(HEAD_LOWER, frontDropRight, 0.026);
+
+    // Seat Post & Leather Saddle
+    const seatPostTop = SEAT_CLUSTER.clone().add(new THREE.Vector3(-0.06, 0.16, 0));
+    addFrameTube(SEAT_CLUSTER, seatPostTop, 0.028, mats.chromeMetal);
+
+    const saddleGroup = new THREE.Group();
+    saddleGroup.position.set(-0.41, 1.44, 0);
+    // Ergonomic saddle cushion: wider rounded rear, narrow tapered nose
+    const saddleGeo = new THREE.BoxGeometry(0.48, 0.08, 0.28);
+    const saddleMesh = new THREE.Mesh(saddleGeo, mats.saddleLeather);
+    saddleMesh.position.set(-0.02, 0, 0);
+    saddleMesh.rotation.z = -0.05; // slight cycling tilt
+    saddleMesh.scale.set(1.0, 0.85, 0.9);
+    saddleMesh.castShadow = true;
+    saddleGroup.add(saddleMesh);
+    bikeGroup.add(saddleGroup);
+
+    // Handlebar Stem, Handlebars & Grips
+    const stemTop = HEAD_UPPER.clone().add(new THREE.Vector3(0.04, 0.18, 0));
+    addFrameTube(HEAD_UPPER, stemTop, 0.03, mats.chromeMetal);
+
+    const barGroup = new THREE.Group();
+    barGroup.position.copy(stemTop);
+
+    // Curved Cruiser Handlebars
+    const barCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(-0.12, -0.04, -0.46), // Right grip
+      new THREE.Vector3(-0.02, 0.02, -0.32),
+      new THREE.Vector3(0.06, 0.04, -0.15),
+      new THREE.Vector3(0.08, 0.04, 0),       // Center clamp
+      new THREE.Vector3(0.06, 0.04, 0.15),
+      new THREE.Vector3(-0.02, 0.02, 0.32),
+      new THREE.Vector3(-0.12, -0.04, 0.46)   // Left grip
+    ]);
+    const barGeo = new THREE.TubeGeometry(barCurve, 24, 0.024, 10, false);
+    const barMesh = new THREE.Mesh(barGeo, mats.chromeMetal);
+    barMesh.castShadow = true;
+    barGroup.add(barMesh);
+
+    // Grips (left and right)
+    const gripGeo = new THREE.CylinderGeometry(0.032, 0.032, 0.16, 12);
+    gripGeo.rotateX(Math.PI / 2);
+    const gripL = new THREE.Mesh(gripGeo, mats.saddleLeather);
+    gripL.position.set(-0.12, -0.04, 0.42);
+    barGroup.add(gripL);
+
+    const gripR = new THREE.Mesh(gripGeo, mats.saddleLeather);
+    gripR.position.set(-0.12, -0.04, -0.42);
+    barGroup.add(gripR);
+
+    // Vintage Chrome Bell
+    const bellGroup = new THREE.Group();
+    bellGroup.position.set(-0.02, 0.07, 0.22);
+    const bellDome = new THREE.Mesh(
+      new THREE.SphereGeometry(0.05, 12, 12, 0, Math.PI * 2, 0, Math.PI / 2),
+      mats.chromeMetal
+    );
+    bellDome.castShadow = true;
+    bellGroup.add(bellDome);
+    barGroup.add(bellGroup);
+
+    bikeGroup.add(barGroup);
+
+    // Drivetrain: Bottom Bracket Axle, Chainring, Cranks & Pedals
+    const drivetrainGroup = new THREE.Group();
+    drivetrainGroup.position.copy(BB_POS);
+    bikeGroup.add(drivetrainGroup);
+
+    // Chainring
+    const chainringGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.02, 24);
+    chainringGeo.rotateX(Math.PI / 2);
+    const chainring = new THREE.Mesh(chainringGeo, mats.darkMetal);
+    chainring.position.z = -0.08;
+    chainring.castShadow = true;
+    drivetrainGroup.add(chainring);
+
+    // Crank arms
+    const crankL = new THREE.Group();
+    const crankArmL = new THREE.Mesh(
+      new THREE.BoxGeometry(CRANK_R, 0.036, 0.02),
+      mats.chromeMetal
+    );
+    crankArmL.position.x = CRANK_R / 2;
+    crankArmL.castShadow = true;
+    crankL.add(crankArmL);
+    crankL.position.z = PEDAL_OFFSET_Z;
+
+    const crankR = new THREE.Group();
+    const crankArmR = new THREE.Mesh(
+      new THREE.BoxGeometry(CRANK_R, 0.036, 0.02),
+      mats.chromeMetal
+    );
+    crankArmR.position.x = CRANK_R / 2;
+    crankArmR.castShadow = true;
+    crankR.add(crankArmR);
+    crankR.position.z = -PEDAL_OFFSET_Z;
+    crankR.rotation.z = Math.PI; // 180 degrees opposite
+
+    drivetrainGroup.add(crankL);
+    drivetrainGroup.add(crankR);
+
+    // Pedal Platforms (remain horizontal / flat)
+    const pedalGeo = new THREE.BoxGeometry(0.16, 0.04, 0.12);
+    const pedalL = new THREE.Mesh(pedalGeo, mats.darkMetal);
+    pedalL.castShadow = true;
+    scene.add(pedalL);
+
+    const pedalR = new THREE.Mesh(pedalGeo, mats.darkMetal);
+    pedalR.castShadow = true;
+    scene.add(pedalR);
+
+    // Front Basket & Inside Treasures (Blue Fish + Black Sunglasses)
+    const basketGroup = new THREE.Group();
+    basketGroup.position.set(1.22, 1.66, 0);
+
+    // Wicker basket open box
+    const basketWidth = 0.52;
+    const basketLength = 0.65;
+    const basketHeight = 0.32;
+    const basketBoxGeo = new THREE.BoxGeometry(basketLength, basketHeight, basketWidth);
+    const basketMesh = new THREE.Mesh(basketBoxGeo, mats.wickerBasket);
+    basketMesh.castShadow = true;
+    basketGroup.add(basketMesh);
+
+    // Basket rim trim
+    const rimTrimGeo = new THREE.BoxGeometry(basketLength + 0.04, 0.04, basketWidth + 0.04);
+    const rimTrim = new THREE.Mesh(rimTrimGeo, mats.wickerBasket);
+    rimTrim.position.y = basketHeight / 2;
+    basketGroup.add(rimTrim);
+
+    // Basket mounting struts
+    addFrameTube(HEAD_LOWER, basketGroup.position.clone().add(new THREE.Vector3(-0.15, -0.15, 0)), 0.016, mats.chromeMetal);
+    addFrameTube(HEAD_UPPER, basketGroup.position.clone().add(new THREE.Vector3(-0.25, 0.05, 0)), 0.016, mats.chromeMetal);
+
+    // --- Basket Item 1: Cute Blue Little Fish ---
+    const fishGroup = new THREE.Group();
+    fishGroup.position.set(0.04, 0.14, 0.06);
+    fishGroup.rotation.set(0.1, -0.2, 0.25); // tilted comfortably
+
+    // Plump fish body
+    const fishBodyGeo = new THREE.SphereGeometry(0.14, 16, 12);
+    fishBodyGeo.scale(1.5, 0.75, 0.55);
+    const fishBody = new THREE.Mesh(fishBodyGeo, mats.fishBody);
+    fishBody.castShadow = true;
+    fishGroup.add(fishBody);
+
+    // White belly patch
+    const fishBellyGeo = new THREE.SphereGeometry(0.13, 14, 10);
+    fishBellyGeo.scale(1.4, 0.5, 0.5);
+    const fishBelly = new THREE.Mesh(fishBellyGeo, mats.fishBelly);
+    fishBelly.position.y = -0.04;
+    fishGroup.add(fishBelly);
+
+    // Wiggling fish tail fin
+    const fishTailGroup = new THREE.Group();
+    fishTailGroup.position.set(-0.20, 0, 0);
+    const fishFinGeo = new THREE.ConeGeometry(0.09, 0.16, 3);
+    fishFinGeo.rotateZ(Math.PI / 2);
+    fishFinGeo.scale(1, 0.25, 1.2);
+    const fishFin = new THREE.Mesh(fishFinGeo, mats.fishFin);
+    fishFin.castShadow = true;
+    fishTailGroup.add(fishFin);
+    fishGroup.add(fishTailGroup);
+
+    // Cute fish eye
+    const fishEye = new THREE.Mesh(new THREE.SphereGeometry(0.024, 8, 8), mats.pelicanEyeWhite);
+    fishEye.position.set(0.12, 0.04, 0.07);
+    const fishPupil = new THREE.Mesh(new THREE.SphereGeometry(0.012, 8, 8), mats.pelicanEyePupil);
+    fishPupil.position.set(0.13, 0.04, 0.08);
+    fishGroup.add(fishEye);
+    fishGroup.add(fishPupil);
+
+    basketGroup.add(fishGroup);
+
+    // --- Basket Item 2: Stylish Black Sunglasses ---
+    const glassesGroup = new THREE.Group();
+    // Perched stylishly across the front rim of the basket
+    glassesGroup.position.set(0.32, 0.17, -0.05);
+    glassesGroup.rotation.set(-0.15, Math.PI / 2, 0.1);
+
+    // Frame brow & bridge
+    const glassesBridge = new THREE.Mesh(
+      new THREE.BoxGeometry(0.28, 0.025, 0.02),
+      mats.sunglassesFrame
+    );
+    glassesGroup.add(glassesBridge);
+
+    // Left & Right Lenses (Dark tinted)
+    const lensGeo = new THREE.CylinderGeometry(0.055, 0.055, 0.015, 16);
+    lensGeo.rotateX(Math.PI / 2);
+    const lensL = new THREE.Mesh(lensGeo, mats.sunglassesLens);
+    lensL.position.x = 0.075;
+    lensL.position.y = -0.04;
+    lensL.scale.set(1.2, 0.9, 1.0);
+    glassesGroup.add(lensL);
+
+    const lensR = lensL.clone();
+    lensR.position.x = -0.075;
+    glassesGroup.add(lensR);
+
+    // Glasses temples / folded arms
+    const armGeo = new THREE.BoxGeometry(0.015, 0.018, 0.22);
+    const armL = new THREE.Mesh(armGeo, mats.sunglassesFrame);
+    armL.position.set(0.14, -0.03, -0.10);
+    armL.rotation.y = 0.15;
+    glassesGroup.add(armL);
+
+    const armR = new THREE.Mesh(armGeo, mats.sunglassesFrame);
+    armR.position.set(-0.14, -0.03, -0.10);
+    armR.rotation.y = -0.15;
+    glassesGroup.add(armR);
+
+    basketGroup.add(glassesGroup);
+    bikeGroup.add(basketGroup);
+
+    /* ==========================================================================
+       6. THE PELICAN (Geometric Cartoon Character Rigging)
+       ========================================================================== */
+    const pelicanRoot = new THREE.Group();
+    bikeGroup.add(pelicanRoot);
+
+    // Butt sits securely on saddle at x: -0.41, y: 1.48
+    const pelicanBodyGroup = new THREE.Group();
+    const BASE_BODY_X = -0.26;
+    const BASE_BODY_Y = 1.70;
+    pelicanBodyGroup.position.set(BASE_BODY_X, BASE_BODY_Y, 0);
+    pelicanRoot.add(pelicanBodyGroup);
+
+    // 1. Pelican Torso: Ellipsoid (forward cycling lean)
+    const torsoGeo = new THREE.SphereGeometry(1, 28, 22);
+    torsoGeo.scale(0.48, 0.38, 0.35);
+    const torsoMesh = new THREE.Mesh(torsoGeo, mats.pelicanFeathers);
+    torsoMesh.rotation.z = -0.26; // ~15 deg forward athletic cycling posture
+    torsoMesh.castShadow = true;
+    torsoMesh.receiveShadow = true;
+    pelicanBodyGroup.add(torsoMesh);
+
+    // 2. Tail: Small Cone pointing backward-up ("尾巴小锥体，小幅自然摆动，不要乱飞")
+    const tailGroup = new THREE.Group();
+    tailGroup.position.set(-0.46, -0.05, 0);
+    const tailGeo = new THREE.ConeGeometry(0.14, 0.36, 12);
+    tailGeo.rotateZ(Math.PI / 2 + 0.35); // points back and slightly up
+    const tailMesh = new THREE.Mesh(tailGeo, mats.pelicanFeathers);
+    tailMesh.castShadow = true;
+    tailGroup.add(tailMesh);
+    pelicanBodyGroup.add(tailGroup);
+
+    // 3. Articulated Curved Neck: Chained Cylinders forming an elegant S-curve
+    const neckBase = new THREE.Group();
+    neckBase.position.set(0.24, 0.18, 0);
+    pelicanBodyGroup.add(neckBase);
+
+    // Construct 4 linked cylinder segments with spherical joints
+    const neckSegments = [];
+    let parentJoint = neckBase;
+    const segConfigs = [
+      { len: 0.28, rad: 0.13, rotZ: 0.42 },  // Leaning forward
+      { len: 0.28, rad: 0.12, rotZ: -0.25 }, // Curving upward
+      { len: 0.26, rad: 0.11, rotZ: -0.28 }, // Rising upright
+      { len: 0.24, rad: 0.10, rotZ: 0.22 }   // Connecting to head
+    ];
+
+    segConfigs.forEach((cfg) => {
+      const joint = new THREE.Group();
+      joint.rotation.z = cfg.rotZ;
+
+      // Joint sphere cap
+      const jointSphere = new THREE.Mesh(
+        new THREE.SphereGeometry(cfg.rad * 1.05, 12, 10),
+        mats.pelicanFeathers
+      );
+      jointSphere.castShadow = true;
+      joint.add(jointSphere);
+
+      // Neck cylinder segment
+      const cylGeo = new THREE.CylinderGeometry(cfg.rad * 0.92, cfg.rad, cfg.len, 14);
+      cylGeo.translate(0, cfg.len / 2, 0);
+      const cylMesh = new THREE.Mesh(cylGeo, mats.pelicanFeathers);
+      cylMesh.castShadow = true;
+      joint.add(cylMesh);
+
+      parentJoint.add(joint);
+      neckSegments.push(joint);
+
+      // Next child attaches at the tip of this segment
+      const tipAnchor = new THREE.Group();
+      tipAnchor.position.y = cfg.len;
+      joint.add(tipAnchor);
+      parentJoint = tipAnchor;
+    });
+
+    // 4. Red Scarf around Neck ("红围巾飘动，用多段几何体摆动模拟")
+    const scarfCollar = new THREE.Mesh(
+      new THREE.TorusGeometry(0.18, 0.065, 12, 24),
+      mats.scarfRed
+    );
+    scarfCollar.rotation.x = Math.PI / 2;
+    scarfCollar.position.set(0.04, 0.02, 0);
+    scarfCollar.castShadow = true;
+    neckBase.add(scarfCollar);
+
+    // Multi-segment cloth ribbon chain for realistic fluttering tails
+    function createScarfTailRibbon(startOffsetZ = 0) {
+      const root = new THREE.Group();
+      root.position.set(-0.10, 0.02, startOffsetZ);
+      root.rotation.z = Math.PI; // streams backward towards -X
+
+      const segments = [];
+      let parent = root;
+      const count = 4;
+      const segLen = 0.16;
+
+      for (let i = 0; i < count; i++) {
+        const segGroup = new THREE.Group();
+        const ribbonMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(0.025, 0.08, segLen),
+          mats.scarfRed
+        );
+        ribbonMesh.position.z = segLen / 2;
+        ribbonMesh.castShadow = true;
+        segGroup.add(ribbonMesh);
+
+        parent.add(segGroup);
+        segments.push(segGroup);
+
+        const nextAnchor = new THREE.Group();
+        nextAnchor.position.z = segLen;
+        segGroup.add(nextAnchor);
+        parent = nextAnchor;
+      }
+      return { root, segments };
+    }
+
+    const scarfTail1 = createScarfTailRibbon(+0.08);
+    const scarfTail2 = createScarfTailRibbon(-0.06);
+    scarfCollar.add(scarfTail1.root);
+    scarfCollar.add(scarfTail2.root);
+
+    // 5. Head at the tip of the neck
+    const headGroup = new THREE.Group();
+    parentJoint.add(headGroup);
+
+    // Skull: elongated rounded sphere
+    const skullGeo = new THREE.SphereGeometry(0.24, 20, 16);
+    skullGeo.scale(1.15, 0.95, 0.90);
+    const skullMesh = new THREE.Mesh(skullGeo, mats.pelicanFeathers);
+    skullMesh.position.set(0.06, 0.05, 0);
+    skullMesh.castShadow = true;
+    headGroup.add(skullMesh);
+
+    // Cute Expressive Cartoon Eyes (Left & Right)
+    function addEye(zOffset) {
+      const eyeAnchor = new THREE.Group();
+      eyeAnchor.position.set(0.18, 0.14, zOffset);
+
+      // White Sclera
+      const sclera = new THREE.Mesh(
+        new THREE.SphereGeometry(0.075, 14, 12),
+        mats.pelicanEyeWhite
+      );
+      sclera.scale.set(1.0, 1.1, 0.85);
+      sclera.castShadow = true;
+      eyeAnchor.add(sclera);
+
+      // Glossy Black Pupil
+      const pupil = new THREE.Mesh(
+        new THREE.SphereGeometry(0.042, 12, 10),
+        mats.pelicanEyePupil
+      );
+      pupil.position.set(0.045, 0.01, zOffset > 0 ? 0.025 : -0.025);
+      eyeAnchor.add(pupil);
+
+      // White Glint / Catchlight
+      const glint = new THREE.Mesh(
+        new THREE.SphereGeometry(0.016, 8, 8),
+        mats.pelicanEyeGlint
+      );
+      glint.position.set(0.075, 0.035, zOffset > 0 ? 0.03 : -0.03);
+      eyeAnchor.add(glint);
+
+      headGroup.add(eyeAnchor);
+    }
+    addEye(+0.15);
+    addEye(-0.15);
+
+    // 6. Iconic Long Pelican Beak & Throat Pouch ("长喙用圆锥")
+    const beakGroup = new THREE.Group();
+    beakGroup.position.set(0.24, 0.03, 0);
+
+    // Upper bill: long cone/wedge in bright cartoon orange
+    const beakLength = 0.92;
+    const beakGeo = new THREE.ConeGeometry(0.14, beakLength, 16);
+    beakGeo.rotateZ(-Math.PI / 2); // points forward along +X
+    beakGeo.scale(1.0, 0.45, 0.65); // flattened top-to-bottom
+    beakGeo.translate(beakLength / 2, 0, 0);
+    const beakMesh = new THREE.Mesh(beakGeo, mats.pelicanBeak);
+    beakMesh.castShadow = true;
+    beakGroup.add(beakMesh);
+
+    // Downward hooked tip
+    const hookGeo = new THREE.ConeGeometry(0.045, 0.12, 8);
+    hookGeo.rotateZ(Math.PI * 0.8);
+    const hookMesh = new THREE.Mesh(hookGeo, mats.pelicanBeak);
+    hookMesh.position.set(beakLength, -0.02, 0);
+    beakGroup.add(hookMesh);
+
+    // Gular Throat Pouch underneath
+    const pouchGeo = new THREE.SphereGeometry(0.26, 16, 14);
+    pouchGeo.scale(1.8, 0.65, 0.55);
+    pouchGeo.translate(0.36, -0.16, 0);
+    const pouchMesh = new THREE.Mesh(pouchGeo, mats.pelicanPouch);
+    pouchMesh.castShadow = true;
+    beakGroup.add(pouchMesh);
+
+    headGroup.add(beakGroup);
+
+    // 7. Wings: Flat Ellipsoids resting forward towards handlebars ("翅膀用扁平椭球，翅膀靠近车把")
+    function createWing(isLeft) {
+      const wingPivot = new THREE.Group();
+      // Shoulder position on the torso
+      wingPivot.position.set(-0.06, 0.12, isLeft ? 0.32 : -0.32);
+
+      const wingBlade = new THREE.Group();
+      const wingGeo = new THREE.SphereGeometry(0.48, 18, 12);
+      wingGeo.scale(1.2, 0.15, 0.48); // Flat ellipsoid
+      wingGeo.translate(0.38, -0.06, isLeft ? 0.10 : -0.10);
+      const wingMesh = new THREE.Mesh(wingGeo, mats.pelicanFeathers);
+      wingMesh.castShadow = true;
+      wingBlade.add(wingMesh);
+
+      // Wing tip feather primaries
+      const tipGeo = new THREE.ConeGeometry(0.12, 0.32, 6);
+      tipGeo.rotateZ(-Math.PI / 2 + 0.1);
+      tipGeo.scale(1.0, 0.2, 1.0);
+      tipGeo.translate(0.85, -0.14, isLeft ? 0.12 : -0.12);
+      const tipMesh = new THREE.Mesh(tipGeo, mats.pelicanFeathers);
+      wingBlade.add(tipMesh);
+
+      // Base rotation reaching down-forward toward handlebar grips
+      wingBlade.rotation.x = isLeft ? 0.28 : -0.28;
+      wingBlade.rotation.y = isLeft ? -0.15 : 0.15;
+      wingBlade.rotation.z = -0.42;
+
+      wingPivot.add(wingBlade);
+      pelicanBodyGroup.add(wingPivot);
+      return { pivot: wingPivot, blade: wingBlade };
+    }
+
+    const wingL = createWing(true);
+    const wingR = createWing(false);
+
+    // 8. Pelican Rigged Legs (2-Bone Analytical IK synced with pedals: "腿用圆柱")
+    // Bone lengths:
+    const THIGH_LEN = 0.65;
+    const SHIN_LEN = 0.62;
+
+    function createLegHierarchy(isLeft) {
+      const hipJoint = new THREE.Mesh(
+        new THREE.SphereGeometry(0.08, 12, 10),
+        mats.pelicanLegJoints
+      );
+      pelicanRoot.add(hipJoint);
+
+      const thighMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.052, 0.046, 1.0, 12),
+        mats.pelicanFeet
+      );
+      thighMesh.castShadow = true;
+      scene.add(thighMesh);
+
+      const kneeJoint = new THREE.Mesh(
+        new THREE.SphereGeometry(0.065, 12, 10),
+        mats.pelicanLegJoints
+      );
+      scene.add(kneeJoint);
+
+      const shinMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.044, 0.038, 1.0, 12),
+        mats.pelicanFeet
+      );
+      shinMesh.castShadow = true;
+      scene.add(shinMesh);
+
+      // Webbed Bird Foot placed flat on the pedal platform
+      const footGroup = new THREE.Group();
+      const footBaseGeo = new THREE.BoxGeometry(0.24, 0.028, 0.16);
+      const footBase = new THREE.Mesh(footBaseGeo, mats.pelicanFeet);
+      footBase.position.x = 0.06;
+      footBase.castShadow = true;
+      footGroup.add(footBase);
+
+      // 3 Webbed Toes
+      for (let t = -1; t <= 1; t++) {
+        const toeGeo = new THREE.ConeGeometry(0.028, 0.16, 6);
+        toeGeo.rotateZ(-Math.PI / 2);
+        const toe = new THREE.Mesh(toeGeo, mats.pelicanFeet);
+        toe.position.set(0.18, 0, t * 0.06);
+        footGroup.add(toe);
+      }
+      scene.add(footGroup);
+
+      return {
+        hipJoint,
+        thighMesh,
+        kneeJoint,
+        shinMesh,
+        footGroup,
+        isLeft
+      };
+    }
+
+    const legL = createLegHierarchy(true);
+    const legR = createLegHierarchy(false);
+
+    // Cylinder positioning helper between two 3D vectors
+    const Y_AXIS = new THREE.Vector3(0, 1, 0);
+    function alignCylinder(mesh, pA, pB) {
+      const v = new THREE.Vector3().subVectors(pB, pA);
+      const len = v.length();
+      mesh.scale.set(1, len, 1);
+      mesh.position.copy(pA).addScaledVector(v, 0.5);
+      mesh.quaternion.setFromUnitVectors(Y_AXIS, v.normalize());
+    }
+
+    // Two-Bone Analytical Inverse Kinematics (IK)
+    function solveLegIK(hip, pedal, L1, L2, isLeft) {
+      const dVec = new THREE.Vector3().subVectors(pedal, hip);
+      let dist = dVec.length();
+      // Clamp distance safely inside reach
+      const maxDist = L1 + L2 - 0.002;
+      const minDist = Math.abs(L1 - L2) + 0.002;
+      dist = Math.max(minDist, Math.min(dist, maxDist));
+
+      const u = dVec.clone().normalize();
+
+      // Law of cosines for angle at hip
+      const cosAlpha = (L1 * L1 + dist * dist - L2 * L2) / (2 * L1 * dist);
+      const alpha = Math.acos(Math.max(-1, Math.min(1, cosAlpha)));
+
+      // Knee bend preference direction: forward (+X), slightly down, outward in Z
+      const outZ = isLeft ? 0.32 : -0.32;
+      const bendRef = new THREE.Vector3(1.0, 0.15, outZ).normalize();
+
+      // Project bendRef perpendicular to u
+      const dot = bendRef.dot(u);
+      const n = new THREE.Vector3().subVectors(bendRef, u.clone().multiplyScalar(dot)).normalize();
+
+      // Knee location
+      const knee = hip.clone()
+        .add(u.clone().multiplyScalar(L1 * Math.cos(alpha)))
+        .add(n.clone().multiplyScalar(L1 * Math.sin(alpha)));
+
+      return { knee, hip, pedal };
+    }
+
+    /* ==========================================================================
+       7. AUDIO ENGINE (Synthesized Bicycle Bell via Web Audio API)
+       ========================================================================== */
+    let audioCtx = null;
+    function playBicycleBell() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      const now = audioCtx.currentTime;
+      // Classic dual ding-ding chime
+      [0, 0.14].forEach((offset, idx) => {
+        const t = now + offset;
+        const freq1 = 2050 + idx * 80;
+        const freq2 = 2540 + idx * 90;
+
+        [freq1, freq2].forEach((freq) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, t);
+
+          gain.gain.setValueAtTime(0.0, t);
+          gain.gain.linearRampToValueAtTime(0.18, t + 0.005);
+          gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          osc.start(t);
+          osc.stop(t + 0.45);
+        });
+      });
+    }
+
+    /* ==========================================================================
+       8. INTERACTIVE UI & CONTROLS
+       ========================================================================== */
+    let speedMultiplier = 1.0;
+    const speedButtons = {
+      slow: document.getElementById('btn-speed-slow'),
+      norm: document.getElementById('btn-speed-norm'),
+      fast: document.getElementById('btn-speed-fast')
+    };
+
+    function setSpeed(factor, activeBtn) {
+      speedMultiplier = factor;
+      Object.values(speedButtons).forEach(b => b.classList.remove('active'));
+      activeBtn.classList.add('active');
+    }
+
+    speedButtons.slow.addEventListener('click', () => setSpeed(0.5, speedButtons.slow));
+    speedButtons.norm.addEventListener('click', () => setSpeed(1.0, speedButtons.norm));
+    speedButtons.fast.addEventListener('click', () => setSpeed(1.8, speedButtons.fast));
+
+    // Bell sound button
+    const bellBtn = document.getElementById('btn-bell');
+    bellBtn.addEventListener('click', () => {
+      playBicycleBell();
+      bellBtn.style.transform = 'scale(0.92)';
+      setTimeout(() => { bellBtn.style.transform = ''; }, 150);
+    });
+
+    // Camera preset buttons
+    const camButtons = {
+      hero: document.getElementById('btn-cam-hero'),
+      side: document.getElementById('btn-cam-side'),
+      front: document.getElementById('btn-cam-front'),
+      top: document.getElementById('btn-cam-top')
+    };
+
+    let targetCamPos = HERO_CAM_POS.clone();
+    let isTransitioningCam = false;
+
+    function switchCameraView(pos, activeBtn) {
+      targetCamPos.copy(pos);
+      isTransitioningCam = true;
+      Object.values(camButtons).forEach(b => b.classList.remove('active'));
+      activeBtn.classList.add('active');
+    }
+
+    camButtons.hero.addEventListener('click', () => {
+      switchCameraView(HERO_CAM_POS, camButtons.hero);
+    });
+    camButtons.side.addEventListener('click', () => {
+      switchCameraView(new THREE.Vector3(0.0, 2.2, 6.2), camButtons.side);
+    });
+    camButtons.front.addEventListener('click', () => {
+      switchCameraView(new THREE.Vector3(5.8, 2.2, 0.4), camButtons.front);
+    });
+    camButtons.top.addEventListener('click', () => {
+      switchCameraView(new THREE.Vector3(2.5, 7.5, 4.5), camButtons.top);
+    });
+
+    /* ==========================================================================
+       9. MAIN ANIMATION & RIGGING LOOP
+       ========================================================================== */
+    const clock = new THREE.Clock();
+    let crankAngle = 0;
+    const BASE_ROAD_SPEED = 4.8; // units per second
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const dt = Math.min(clock.getDelta(), 0.1);
+      const time = clock.getElapsedTime();
+      const currentSpeed = BASE_ROAD_SPEED * speedMultiplier;
+
+      // 1. Smooth Camera Transition
+      if (isTransitioningCam) {
+        camera.position.lerp(targetCamPos, 0.08);
+        controls.target.lerp(TARGET_LOOKAT, 0.08);
+        if (camera.position.distanceTo(targetCamPos) < 0.05) {
+          isTransitioningCam = false;
+        }
+      }
+      controls.update();
+
+      // 2. Wheels & Drivetrain Rotation (Physical Sync with road speed)
+      const wheelAngularVel = currentSpeed / WHEEL_R;
+      rearWheel.rotation.z -= dt * wheelAngularVel;
+      frontWheel.rotation.z -= dt * wheelAngularVel;
+
+      // Gear ratio between wheel and crank
+      const crankAngularVel = wheelAngularVel / 2.3;
+      crankAngle -= dt * crankAngularVel;
+
+      drivetrainGroup.rotation.z = crankAngle;
+
+      // 3. Scenery Infinite Scrolling (Moving along -X)
+      const moveDistance = currentSpeed * dt;
+
+      // Road dashes
+      roadDashes.forEach(dash => {
+        dash.position.x -= moveDistance;
+        if (dash.position.x < -roadLength / 2) {
+          dash.position.x += roadLength;
+        }
+      });
+
+      // Moving objects (trees, windmill, fence, mountains)
+      movingObjects.forEach(obj => {
+        if (obj.isPeriodic) {
+          obj.mesh.position.x -= moveDistance * obj.speedFactor;
+          if (obj.mesh.position.x < -obj.period) {
+            obj.mesh.position.x += obj.period;
+          }
+        } else {
+          obj.mesh.position.x -= moveDistance * obj.speedFactor;
+          if (obj.mesh.position.x < obj.wrapMin) {
+            obj.mesh.position.x = obj.wrapMax;
+            if (obj.resetZ) obj.mesh.position.z = obj.resetZ();
+          }
+        }
+      });
+
+      // Windmill Blades Spinning
+      bladesGroup.rotation.z += dt * (1.2 * Math.max(speedMultiplier, 0.4));
+
+      // Clouds Drifting
+      clouds.forEach(cloud => {
+        cloud.mesh.position.x -= dt * currentSpeed * cloud.speed;
+        if (cloud.mesh.position.x < cloud.wrapMin) {
+          cloud.mesh.position.x = cloud.wrapMax;
+        }
+      });
+
+      // 4. Pelican Subtle Body Bobbing & Dynamic Weight Shift
+      const bobbing = Math.sin(crankAngle * 2) * 0.022;
+      const swayZ = Math.sin(crankAngle) * 0.016;
+      pelicanBodyGroup.position.y = BASE_BODY_Y + bobbing;
+      pelicanBodyGroup.position.x = BASE_BODY_X + Math.cos(crankAngle * 2) * 0.010;
+      pelicanBodyGroup.rotation.z = Math.sin(crankAngle * 2) * 0.018;
+      pelicanBodyGroup.rotation.x = swayZ;
+
+      // 5. Tail Subtle Natural Wag ("尾巴小幅自然摆动，不要乱飞")
+      tailGroup.rotation.y = Math.sin(time * 3.2) * 0.07; // ~4 degrees
+      tailGroup.rotation.z = Math.cos(time * 2.4) * 0.04;
+
+      // 6. Neck Breathing Sway
+      neckSegments.forEach((seg, idx) => {
+        const wave = Math.sin(time * 3.0 + idx * 0.6) * 0.025;
+        seg.rotation.z = segConfigs[idx].rotZ + wave;
+      });
+
+      // 7. Red Scarf Cloth Fluttering (Multi-segment wave propagation)
+      const windSpeed = 7.5 * Math.max(speedMultiplier, 0.6);
+      scarfTail1.segments.forEach((seg, i) => {
+        seg.rotation.x = Math.sin(time * windSpeed - i * 0.6) * 0.16 + 0.08;
+        seg.rotation.y = Math.cos(time * (windSpeed * 0.85) - i * 0.5) * 0.12;
+      });
+      scarfTail2.segments.forEach((seg, i) => {
+        seg.rotation.x = Math.sin(time * windSpeed - i * 0.6 + 1.2) * 0.14 + 0.06;
+        seg.rotation.y = Math.cos(time * (windSpeed * 0.85) - i * 0.5 + 0.8) * 0.11;
+      });
+
+      // 8. Wings Gentle Flap / Bar Resting Flutter
+      const wingFlap = Math.sin(time * 3.5) * 0.045;
+      wingL.blade.rotation.x = 0.28 + wingFlap;
+      wingR.blade.rotation.x = -0.28 - wingFlap;
+
+      // 9. Basket Fish Tail Happy Wag
+      fishTailGroup.rotation.y = Math.sin(time * 5.0) * 0.25;
+
+      // 10. Kinematic Pedal Positions & Foot Attachment
+      // Left pedal center in world space
+      const pedalPosL = BB_POS.clone().add(new THREE.Vector3(
+        Math.cos(crankAngle) * CRANK_R,
+        Math.sin(crankAngle) * CRANK_R,
+        PEDAL_OFFSET_Z
+      ));
+
+      // Right pedal center in world space (180 deg offset)
+      const pedalPosR = BB_POS.clone().add(new THREE.Vector3(
+        Math.cos(crankAngle + Math.PI) * CRANK_R,
+        Math.sin(crankAngle + Math.PI) * CRANK_R,
+        -PEDAL_OFFSET_Z
+      ));
+
+      pedalL.position.copy(pedalPosL);
+      pedalR.position.copy(pedalPosR);
+
+      // Foot platforms stay horizontal
+      legL.footGroup.position.copy(pedalPosL);
+      legR.footGroup.position.copy(pedalPosR);
+
+      // 11. Rigged Pelican Leg IK (Thigh & Shin cylinders)
+      // Pelican Hip positions in world space
+      const hipL = new THREE.Vector3(-0.36, pelicanBodyGroup.position.y - 0.18, 0.26);
+      const hipR = new THREE.Vector3(-0.36, pelicanBodyGroup.position.y - 0.18, -0.26);
+
+      legL.hipJoint.position.copy(hipL);
+      legR.hipJoint.position.copy(hipR);
+
+      const ikL = solveLegIK(hipL, pedalPosL, THIGH_LEN, SHIN_LEN, true);
+      legL.kneeJoint.position.copy(ikL.knee);
+      alignCylinder(legL.thighMesh, ikL.hip, ikL.knee);
+      alignCylinder(legL.shinMesh, ikL.knee, ikL.pedal);
+
+      const ikR = solveLegIK(hipR, pedalPosR, THIGH_LEN, SHIN_LEN, false);
+      legR.kneeJoint.position.copy(ikR.knee);
+      alignCylinder(legR.thighMesh, ikR.hip, ikR.knee);
+      alignCylinder(legR.shinMesh, ikR.knee, ikR.pedal);
+
+      // Render Scene
+      renderer.render(scene, camera);
+    }
+
+    /* ==========================================================================
+       10. RESPONSIVE WINDOW RESIZE
+       ========================================================================== */
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    });
+
+    // Start Animation
+    animate();
+  </script>
+</body>
+</html>
